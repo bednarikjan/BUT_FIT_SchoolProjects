@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<scene>
+    <places>
+        <place id="1" x="1075" y="1203">4,2,3,</place>
+        <place id="2" x="1242" y="1214">8,9,7,</place>
+        <place id="8" x="1351" y="1207">1,2,3,7,9,</place>
+        <place id="9" x="1529" y="1198">1,2,3,7,9,</place>
+        <place id="12" x="1052" y="1619"></place>
+        <place id="13" x="1249" y="1624"></place>
+        <place id="14" x="1342" y="1619"></place>
+        <place id="15" x="1527" y="1614"></place>
+        <place id="16" x="1359" y="1417"></place>
+        <place id="17" x="1113" y="1433">1,</place>
+        <place id="20" x="1549" y="1429"></place>
+    </places>
+    <transitions>
+        <transition id="3" x="1153" y="1354">
+            <guard>X&lt;Y</guard>
+            <action>Z=X+Y </action>
+            <doable>0</doable>
+        </transition>
+        <transition id="7" x="1124" y="1536">
+            <guard></guard>
+            <action>X=Z-1+2+2 </action>
+            <doable>0</doable>
+        </transition>
+        <transition id="10" x="1450" y="1358">
+            <guard>X&gt;Y &amp;&amp; X!=7 &amp;&amp; Y&gt;1</guard>
+            <action>Z=X+Y-2  </action>
+            <doable>0</doable>
+        </transition>
+        <transition id="11" x="1374" y="1540">
+            <guard>Z==3</guard>
+            <action>X=5  </action>
+            <doable>0</doable>
+        </transition>
+    </transitions>
+    <arcs>
+        <arc idFrom="1" idTo="3">X</arc>
+        <arc idFrom="2" idTo="3">Y</arc>
+        <arc idFrom="3" idTo="17">Z</arc>
+        <arc idFrom="17" idTo="7">Z</arc>
+        <arc idFrom="7" idTo="12">X</arc>
+        <arc idFrom="7" idTo="13">X</arc>
+        <arc idFrom="8" idTo="10">X</arc>
+        <arc idFrom="16" idTo="11">Z</arc>
+        <arc idFrom="11" idTo="14">X</arc>
+        <arc idFrom="11" idTo="15">Z</arc>
+        <arc idFrom="9" idTo="10">Y</arc>
+        <arc idFrom="10" idTo="16">Z</arc>
+        <arc idFrom="10" idTo="20">X</arc>
+        <arc idFrom="20" idTo="11">X</arc>
+    </arcs>
+</scene>

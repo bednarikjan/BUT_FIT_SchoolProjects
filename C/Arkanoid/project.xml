@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- ***************************************************************************
+ * Projekt: IMP - Arkanoid na maticovem displeji
+ * 
+ * Autor: Jan Bednarik (xbedna45)
+ * Datum: 15.12.2012
+ * Kod: ORIGINAL
+ * Popis:
+ *      Popis zdrojovych kodu pro preklad
+ * 
+ *************************************************************************** -->
+
+<project outputprefix="arkanoid">
+
+    <!--  Project description -->
+    <name>Arkanoid</name>
+    <author>Jan Bednarik</author>
+    <authoremail>xbedna45@stud.fit.vutbr.cz</authoremail>
+    <revision>20090201</revision>
+    <description>Hra Arkanoid na maticovem displeji 10x7 LED</description>
+
+    <!--  MCU part -->
+    <mcu>
+        <include>mcu/libs/keyboard/package.xml</include>
+        <include>mcu/libs/lcd/package.xml</include>
+        <file>main.c</file>
+    </mcu>
+
+    <!-- FPGA part -->
+    <fpga>
+        <include>fpga/ctrls/keyboard/package.xml</include>
+        <include>fpga/ctrls/lcd/package.xml</include>
+        <file>top_level.vhd</file>
+    </fpga>
+
+</project>

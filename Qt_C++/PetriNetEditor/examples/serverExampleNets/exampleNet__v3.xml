@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+
+<scene>
+    <places>
+        <place id="1" x="1172" y="1274">9,7,3,8,4,15,</place>
+        <place id="2" x="1279" y="1281">24,26,14,1,0,8,</place>
+        <place id="3" x="1437" y="1278">1,9,11,5,7,6,20,15,</place>
+        <place id="4" x="1594" y="1290">1,3,5,9,5,4,1,6,2,7,8,</place>
+        <place id="5" x="1713" y="1292">5,4,6,9,1,4,</place>
+        <place id="10" x="1046" y="1276">8,6,7,9,10,15,5,8,9,3,4,8,</place>
+        <place id="12" x="1753" y="1548">1,</place>
+        <place id="13" x="1593" y="1549">1,2,6,</place>
+        <place id="15" x="1089" y="1534"></place>
+        <place id="16" x="1202" y="1539">1,2,3,4,5,6,</place>
+        <place id="20" x="1298" y="1533"></place>
+        <place id="23" x="1458" y="1531"></place>
+        <place id="24" x="1473" y="1733"></place>
+        <place id="25" x="1150" y="1729"></place>
+    </places>
+    <transitions>
+        <transition id="6" x="1184" y="1403">
+            <guard>X&gt;Y &amp;&amp; Y&lt; Z &amp;&amp; Y&lt;10</guard>
+            <action>X=Y+Z+X   </action>
+            <doable>0</doable>
+        </transition>
+        <transition id="7" x="1385" y="1404">
+            <guard>X&gt; 10 &amp;&amp;X!=11</guard>
+            <action>Y=X-15      </action>
+            <doable>0</doable>
+        </transition>
+        <transition id="8" x="1557" y="1405">
+            <guard>Z&gt;=Y &amp;&amp; Y==5</guard>
+            <action>X=1-2-3+5-Y   </action>
+            <doable>0</doable>
+        </transition>
+        <transition id="9" x="1721" y="1416">
+            <guard></guard>
+            <action>Z=Y+X  </action>
+            <doable>0</doable>
+        </transition>
+        <transition id="11" x="1859" y="1412">
+            <guard></guard>
+            <action></action>
+            <doable>0</doable>
+        </transition>
+        <transition id="21" x="1206" y="1662">
+            <guard></guard>
+            <action>X=X-P </action>
+            <doable>0</doable>
+        </transition>
+        <transition id="22" x="1540" y="1676">
+            <guard>X!=0 &amp;&amp; D&gt;=1</guard>
+            <action>Y=X+DDD+1    </action>
+            <doable>0</doable>
+        </transition>
+    </transitions>
+    <arcs>
+        <arc idFrom="1" idTo="6">Y</arc>
+        <arc idFrom="2" idTo="6">Z</arc>
+        <arc idFrom="3" idTo="7">X</arc>
+        <arc idFrom="3" idTo="8">Z</arc>
+        <arc idFrom="4" idTo="8">Y</arc>
+        <arc idFrom="10" idTo="6">X</arc>
+        <arc idFrom="5" idTo="9">Y</arc>
+        <arc idFrom="4" idTo="9">X</arc>
+        <arc idFrom="5" idTo="11">4</arc>
+        <arc idFrom="6" idTo="20">X</arc>
+        <arc idFrom="7" idTo="20">Y</arc>
+        <arc idFrom="6" idTo="15">X</arc>
+        <arc idFrom="15" idTo="21">X</arc>
+        <arc idFrom="16" idTo="21">2</arc>
+        <arc idFrom="20" idTo="21">P</arc>
+        <arc idFrom="20" idTo="22">X</arc>
+        <arc idFrom="23" idTo="22">DDD</arc>
+        <arc idFrom="13" idTo="22">Z</arc>
+        <arc idFrom="11" idTo="12">X</arc>
+        <arc idFrom="9" idTo="12">Z</arc>
+        <arc idFrom="8" idTo="12">Y</arc>
+        <arc idFrom="8" idTo="23">X</arc>
+        <arc idFrom="12" idTo="22">D</arc>
+        <arc idFrom="22" idTo="24">Y</arc>
+        <arc idFrom="21" idTo="25">X</arc>
+    </arcs>
+</scene>

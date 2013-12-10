@@ -1,0 +1,347 @@
+#! /bin/ksh
+
+#####################################################################
+## Popis
+# Program ardiff slouzi k porovnani dvou archivu a vypisu rozdilnych 
+# souboru, tvorbu rozdilovych archivu a dopradnou, nebo reverzni 
+# aplikaci rozdiloveho archivu na jeden z originalnich archivu. 
+# Rozhrani viz ./ardiff.
+
+#####################################################################
+# PROJEKT: IOS - uloha A
+# DATUM: 26.3.2011
+# AUTOR: Jan Bednarik (xbedna45), xbedna45@stud.fit.vutbr.cz 
+# FAKULTA: FIT VUT Brno
+
+#####################################################################
+
+# Odchyceni signalu SIGHUP, SIGINT, SIGQUIT, SIGABRT, SIGALRM, SIGTERM
+trap 'terminate "term" "NO_PARAM"' HUP INT QUIT ABRT ALRM TERM
+
+# Deklarace promennych zastupujicich jednotlive parametry.
+l=0 c=0 p=0 r=0 o=0
+# Promenna pro uchovani argumentu parametru -o.
+output_file=
+# Aktualni pracovni adresar.
+cur_dir=`pwd`
+
+## Tisk napovedy.
+help_msg ()
+{
+   printf "ardiff vypisuje zmeny archivu, vytvari rozdilovy archiv nebo aplikuje rozdilovy
+archiv na zdrojovy archiv.
+Pouziti: ardiff [volby] archiv1 archiv2
+Volby:
+  -o SOUBOR  Pokud je cilem skriptu vytvorit archiv, bude vytvoren do souboru
+             se jmenem SOUBOR (plati pro -c a -p).
+  -l         Vypis seznamu souboru, ktere se v zadanych archivech lisi.
+  -c         Vytvoreni rozdiloveho archivu.
+  -p         Aplikace rozdiloveho archivu (argument archiv2) na zdrojovy archiv
+             (argument archiv1).
+  -r         Prepnuti do reverzniho rezimu (plati pro -p).\n"
+  exit 1
+}
+
+## Tisk chybovych hlaseni.
+# $1..volba, $2..jmeno souboru, $3..$tmpfile
+error_msg ()
+{
+  case "$1" in
+    "e_archiv" )
+      echo "CHYBA: Soubor $2 neni podporovany archiv. Podporovane archivy 
+jsou .tar, .tgz, .tar.bz2 a .zip." 1>&2
+      ;;
+    "e_patch" )
+      echo "CHYBA: Aplikace patche se nezdarila. Pravdepodobny duvod je nevhodna 
+kombinace zdrojoveho a rozdiloveho archivu, nebo nevhodne pouziti prepinace -r." 1>&2
+      ;;
+    "e_temp" )
+      echo "CHYBA: Nepodarilo se vytvorit docasny soubor." 1>&2
+      ;;
+    "e_copy" ) 
+      echo "CHYBA: Nepodarilo se zkopirovat soubor $2." 1>&2
+      ;;
+    "e_decomp" )
+      echo "CHYBA: Nepodarilo se rozbalit soubor $2." 1>&2
+      ;;
+    "NO_PARAM")
+      ;;
+  esac
+}
+
+## Funkce terminate vypisuje pripadne chybove hlaseni,
+## maze docasne soubry a ukoncuje program s chybovym 
+## navratovym kodem.
+# $1..cesta k docasnemu adresari.
+terminate ()
+{
+  error_msg "$1" "$2"
+  cd
+  rm -r $tmpfile
+  exit 1
+}
+
+## Funkce decompress rozbaluje zadany archiv.
+# $1..typ archivu, $2..jmeno souboru, $3..cesta k souboru
+decompress ()
+{
+ case "$1" in
+  "Zip archive" | "ZIP archive" )
+    unzip $2 -d $3 > /dev/null 2>&1 || terminate "e_decomp" "$2"
+    ;;
+  "bzip2 compressed" | "gzip compressed" | "POSIX tar" | "USTAR tar" )
+    cp $2 ${3} 2>/dev/null || terminate "e_copy" "$2"
+    cd ${3} 
+    tar -xf ${2} 2>/dev/null || terminate "e_decomp" "$2"
+    rm $2 
+    cd - >/dev/null
+    ;;
+  *)
+    terminate "e_archiv" $2
+    ;;
+ esac 
+}
+
+## Funkce list_diffs vypise seznam rozdilnych souboru v porovnavanych archivech.
+list_diffs ()
+{
+  # Ulozeni cest vsech souboru v obou adresarich do promenne paths, serazeno a bez duplikatu.
+  paths=`find -L "$tmpfile"/a/ -type f | sed -r "s/\/[^/]+\/[^/]+\/[^/]+\///"; 
+	${paths} find -H "$tmpfile"/b/ -type f | sed -r "s/\/[^/]+\/[^/]+\/[^/]+\///"`
+  paths=`echo "$paths" | sort | uniq`
+  
+  # Ulozeni puvodni hodnoty promenne IFS a zmena na znak konce radku.
+  OIFS="$IFS"
+  IFS=$'\n'
+  
+  # Porovnani jednotlivych souboru v obou archivech podle cest v promenne paths.
+  for x in $paths; do
+    diff -Naq ${tmpfile}/a/$x ${tmpfile}/b/$x > /dev/null 2>&1 || echo "$x"
+  done
+
+  IFS="$OIFS"
+}
+
+## Funkce create_diffs vytvori rozdilovy archiv dvou porovnavanych archivu.
+create_diffs ()
+{
+  # Tvorba adresare pro rozdilovy archiv
+  mkdir $tmpfile/diffs || terminate "e_temp" "NO_PARAM"
+  cd $tmpfile/diffs
+  # Vytvoreni adresarove struktury pro rozdilovy archiv a ulozeni seznamu 
+  # rozdilnych souboru do souboru tmp_list.
+  mkdir -p `list_diffs | tee $tmpfile/tmp_list | sed -r "s/\/?[^/]+$//" | uniq` || terminate "e_temp" "NO_PARAM"
+  
+  # Ulozeni puvodni hodnoty promenne IFS a zmena na znak konce radku.
+  OIFS="$IFS"
+  IFS=$'\n'
+
+  cd $tmpfile
+
+  for x in `cat $tmpfile/tmp_list`; do
+    # Aktualni identifikator predstavuje regularni, soubor v obou archivech. Jeden 
+    # z nich muze byt neexistujici.
+    if [ -f a/"$x" -a ! -d b/"$x" -o -f b/"$x" -a ! -d a/"$x" ]; then
+      diff -Nau a/"$x" b/"$x" > $tmpfile/diffs/"$x".patch
+      continue
+    # Aktualni identifikator predstavuje soubor v archivu a/ a adresar v archivu b/.
+    elif [ -f a/"$x" -a -d b/"$x" ]; then
+      # Docasne prejmenovani souboru, ktery koliduje se slozkou na ekvivalentni pozici.
+      tmp_rename=`mktemp -u $tmpfile/a/"$x".XXXXXX | sed -r "s/^\/tmp\/[^/]+\/a\///"`
+      mv a/"$x" a/"$tmp_rename"
+    # Aktualni identifikator predstavuje soubor v archivu b/ a adresar v archivu a/.
+    elif [ -f b/"$x" -a -d a/"$x" ]; then
+      # Docasne prejmenovani souboru, ktery koliduje se slozkou na ekvivalentni pozici.
+      tmp_rename=`mktemp -u $tmpfile/b/"$x".XXXXXX | sed -r "s/^\/tmp\/[^/]+\/b\///"`
+      mv b/"$x" b/"$tmp_rename"
+    fi
+    # Porovnani ekvivalentnich souboru a zapis vysledku do souboru v adresari diffs.
+    diff -Nau a/"$tmp_rename" b/"$tmp_rename" > $tmpfile/diffs/"$x".patch
+    # Ziskani puvodniho jmena prejmenovaneho souboru
+    tmp_rename=`echo "$tmp_rename" | sed -r "s/.+\/([^\]+)\.[^.]+$/\1/"`
+    sed -r "1,2s/(^.+)$tmp_rename\.[^[:space:]]+(.+$)/\1$tmp_rename\2/" <diffs/"$x".patch >diffs/"$x".patch2
+    mv diffs/"$x".patch2 diffs/"$x".patch
+  done
+
+  IFS="$OIFS"
+}
+
+## Funkce pack_diffs komprimuje data v dane slozce.
+pack_diffs ()
+{
+  cd $tmpfile/$1
+  case "$ext" in
+    tar.gz | tgz )
+      tar -czf "$cur_dir"/"$output_file" *
+      ;;
+    tar.bz2 )
+      tar -cjf "$cur_dir"/"$output_file" *
+      ;;
+    tar )
+      tar -cf "$cur_dir"/"$output_file" *
+      ;;
+    zip | ZIP )
+      zip -r "$cur_dir"/"$output_file" * > /dev/null
+      ;;
+  esac
+}
+
+## Funkce patch_files vytvori novy (stary) archiv ze stareho (noveho) a rozdiloveho archivu.
+patch_files ()
+{
+  cd $tmpfile
+  # Deklarace promenne pro ulozeni souboru, na nez nesel pri prvnim pruchodu aplikovat patch.
+  ref_paths=
+  # Seznam vsech souboru v rozdilovem archivu.
+  paths=`find "$tmpfile"/b/ -type f | sed -r "s/\/[^/]+\/[^/]+\/[^/]+\/(.+)\.patch$/\1/" | sort`
+  
+  # Ulozeni puvodni hodnoty promenne IFS a zmena na znak konce radku.
+  OIFS="$IFS"
+  IFS=$'\n'
+  
+  # Prvni pruchod.
+  for x in $paths; do
+    # $x neni soubor v adresari a.
+    if [ ! -f a/"$x" ]; then
+      # $x neni adresar v adresari a.
+      if [ -d a/"$x" ]; then
+	ref_paths="$ref_paths"$'\n'"$x"
+	continue
+      fi
+    fi
+    if [ "$r" = 0 ]; then
+      patch -us a/"$x" b/"$x".patch >/dev/null 2>&1 || terminate "e_patch" "NO_PARAM"
+    else
+      patch -Rus a/"$x" b/"$x".patch >/dev/null 2>&1 || terminate "e_patch" "NO_PARAM"
+    fi
+  done
+ 
+  # Druhy pruchod.
+  if [ "$r" = 0 ]; then
+    for x in $ref_paths; do
+      patch -us a/"$x" b/"$x".patch >/dev/null 2>&1 || terminate "e_patch" "NO_PARAM"
+    done
+  else
+    for x in $ref_paths; do
+      patch -Rus a/"$x" b/"$x".patch >/dev/null 2>&1 || terminate "e_patch" "NO_PARAM"
+    done
+  fi
+  
+  # Najde a smaze vsechny prazdne adresare.
+  empty_dirs=`find "$tmpfile"/a/ -depth -type d | sed -r "s/^\/[^/]+\/[^/]+\///"`
+  for x in $empty_dirs; do
+    find "$tmpfile"/"$x"/* > /dev/null 2>&1 || rmdir "$tmpfile"/"$x"
+  done
+
+  IFS="$OIFS"
+}
+
+# Zpracovani parametru
+while getopts ":lcpro:" opt; do
+  case "$opt" in
+    l)
+      if ((c || p)); then
+	help_msg
+      fi
+      l=1
+      ;;
+    c)
+      # Soucasne zadani parametru -c a -p.
+      if ((p || l)); then
+	help_msg
+      fi
+      c=1
+      ;;
+    p)
+      # Soucasne zadani parametru -c a -p.
+      if ((c || l)); then
+	help_msg
+      fi
+      p=1
+      ;;
+    r)
+      r=1
+      ;;
+    o)
+      o=1
+      output_file=$OPTARG
+      # Zjisteni pripony vysledneho archivu.
+      ext=`echo "$output_file" | sed -r "s/^.+\.([^.]+\.[^.]+)$/\1/"`
+      if [ "$ext" != tar.gz -a "$ext" != tar.bz2 ]; then
+	ext=`echo "$ext" | sed -r "s/^[^.]*\.//"`
+	if [ "$ext" != tgz -a "$ext" != tar -a "$ext" != zip -a "$ext" != ZIP ]; then
+	  help_msg
+	fi
+      fi
+      ;;
+    \? | :)
+      help_msg
+      ;;
+    *)
+      echo "Tato moznost by nemela nikdy nastat."
+      ;;
+  esac
+done
+
+## Kontrola chybnych kombinaci parametru
+# Kontrola, zda nebyl program spusten bez parametru.
+if ((!l && !c && !p)); then
+  help_msg
+fi
+# Kontrola, zda nebyl zadan samostatne parametr -r.
+if ((r && !p)); then
+  help_msg
+fi
+# Kontrola, zda nebyl zadan samostatne parametr -o.
+if ((o && !p && !c)); then
+  help_msg
+fi
+# Kontrola, zda nektery z parametru -c a -p nebyl zadan bez -o.
+if (((p || c) && !o )); then
+  help_msg
+fi
+
+# Posunuti parametru tak, aby promenna $1 obsahovala prvni operand.
+shift $((OPTIND-1))
+
+# Kontrola, zda oba soubory zadane pomoci operandu existuji.
+if [ ! -e "$1" -o ! -e "$2" ]; then 
+  help_msg
+fi
+
+# Zjisteni typu archivu.
+op1=`file $1 | sed -e "s/$1:[\t ]//" | cut -d" " -f1,2`
+op2=`file $2 | sed -e "s/$2:[\t ]//" | cut -d" " -f1,2`
+
+# Tvorba docasneho adresare.
+tmpbase=`basename $0`
+tmpfile=`mktemp -d /tmp/${tmpbase}.XXXXXX 2>/dev/null || error_msg "e_temp"; exit 1`
+
+mkdir ${tmpfile}/a || terminate "e_temp" "NO_PARAM"
+mkdir ${tmpfile}/b || terminate "e_temp" "NO_PARAM"
+
+# Rozbaleni archivu.
+decompress "$op1" "$1" "${tmpfile}/a"
+decompress "$op2" "$2" "${tmpfile}/b"
+
+# Zvolen prepinac -l
+if [ $l -eq 1 ]; then
+  list_diffs
+fi
+# Zvolen prepinac -c
+if [ $c -eq 1 ]; then
+  create_diffs
+  pack_folder="diffs/"
+  pack_diffs $pack_folder
+fi
+# Zvolen prepinac -p
+if [ $p -eq 1 ]; then
+  patch_files
+  pack_folder="a/"
+  pack_diffs $pack_folder
+fi
+
+# Smazani docasneho adresare a ukonceni programu.
+cd
+rm -r "$tmpfile"
+exit 0

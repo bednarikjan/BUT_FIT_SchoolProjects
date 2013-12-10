@@ -1,0 +1,95 @@
+/*
+ * Implementace interpretu imperativniho jazyka IFJ2011
+ *
+ * Autori:
+ *  xbedna45 - Bednarik Jan
+ *  xblaha22 - Blaha Hynek
+ *  xjanys00 - Janys Martin
+ *  xmacha48 - Machacek Ondrej
+ */
+
+#include "ial.h"
+#include "ilist.h"
+#include "scaner.h"
+
+#ifndef PARSER_H
+#define PARSER_H
+
+#define SYNTAX_OK 6
+#define EXPR_OK 7
+#define MRL_OK 8
+#define SEM_OK 9
+
+#define WAIT 0
+#define WORK 1
+#define FSYN 2
+#define FSEM 3
+#define NONTERM_SHIFT 6 
+#define TABLE_SIZE 23
+#define RULE_COUNT 21
+#define RULE_MAXLENGTH 4
+
+#define GET_PRIORITY(row, column) \
+  (priorityTable[(row) - NONTERM_SHIFT][(column) - NONTERM_SHIFT])
+
+// Tabulka priorit elementu vyrazu
+static const int priorityTable[TABLE_SIZE][TABLE_SIZE] = {
+    //     +     -      *     /     ^     (     )    ID   STR   NUM   FL    TR    NIL   $    ..    ==    ~=    <     <=     >    >=     %    #
+    {WORK, WORK, WAIT, WAIT, WAIT, WAIT, WORK, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WAIT, WAIT}, //6 +
+    {WORK, WORK, WAIT, WAIT, WAIT, WAIT, WORK, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WAIT, WAIT}, //7 - 
+    {WORK, WORK, WORK, WORK, WAIT, WAIT, WORK, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WAIT}, //8 *  
+    {WORK, WORK, WORK, WORK, WAIT, WAIT, WORK, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WAIT}, //9 /
+    {WORK, WORK, WORK, WORK, WAIT, WAIT, WORK, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK}, //10 ^
+    {WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, FSYN, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT}, //11 ( 
+    {WORK, WORK, WORK, WORK, WORK, FSYN, WORK, FSYN, FSYN, FSYN, FSYN, FSYN, FSYN, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK}, //12 )
+    {WORK, WORK, WORK, WORK, WORK, FSYN, WORK, FSYN, FSYN, FSYN, FSYN, FSYN, FSYN, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK}, //13 ID
+    {WORK, WORK, WORK, WORK, WORK, FSYN, WORK, FSYN, FSYN, FSYN, FSYN, FSYN, FSYN, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK}, //14 STR
+    {WORK, WORK, WORK, WORK, WORK, FSYN, WORK, FSYN, FSYN, FSYN, FSYN, FSYN, FSYN, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK}, //15 NUM
+    {WORK, WORK, WORK, WORK, WORK, FSYN, WORK, FSYN, FSYN, FSYN, FSYN, FSYN, FSYN, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK}, //16 FALSE
+    {WORK, WORK, WORK, WORK, WORK, FSYN, WORK, FSYN, FSYN, FSYN, FSYN, FSYN, FSYN, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK}, //17 TRUE
+    {WORK, WORK, WORK, WORK, WORK, FSYN, WORK, FSYN, FSYN, FSYN, FSYN, FSYN, FSYN, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK}, //18 NIL
+    {WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, FSYN, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, FSYN, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT}, //19 $
+    {FSEM, FSEM, FSEM, FSEM, FSEM, WAIT, WORK, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, FSEM, WAIT}, //20 ..
+    {WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WAIT, WORK, WORK, WORK, WORK, WORK, WORK, WAIT, WAIT}, //21 ==
+    {WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WAIT, WORK, WORK, WORK, WORK, WORK, WORK, WAIT, WAIT}, //22 ~=
+    {WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WAIT, WORK, WORK, WORK, WORK, WORK, WORK, WAIT, WAIT}, //23 <
+    {WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WAIT, WORK, WORK, WORK, WORK, WORK, WORK, WAIT, WAIT}, //24 <=
+    {WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WAIT, WORK, WORK, WORK, WORK, WORK, WORK, WAIT, WAIT}, //25 >
+    {WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WAIT, WORK, WORK, WORK, WORK, WORK, WORK, WAIT, WAIT}, //26 >=
+    {WORK, WORK, WORK, WORK, WAIT, WAIT, WORK, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WAIT}, //27 %
+    {WORK, WORK, WORK, WORK, WAIT, WAIT, WORK, WAIT, WAIT, WAIT, WAIT, WAIT, WAIT, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK}, //28 #
+
+};
+
+// Tabulka pravidel zjednodusovani vyrazu
+static const int ruleTable[RULE_COUNT][RULE_MAXLENGTH] = {
+    {1, ID}, // [0]Pocet elementu pravidla
+    {1, STRING}, // 1
+    {1, NUMBER}, // 2
+    {1, FALSE}, // 3
+    {1, TRUE}, // 4
+    {1, NIL}, // 5
+    {3, E, PLUS, E}, // 6
+    {3, E, MINUS, E}, // 7
+    {3, E, MUL, E}, // 8
+    {3, E, DIV, E}, // 9
+    {3, E, CARET, E}, // 10
+    {3, E, CONCAT, E}, // 11
+    {3, E, EQUAL, E}, // 12
+    {3, E, NOT_EQUAL, E}, // 13
+    {3, E, LESS, E}, // 14
+    {3, E, LESS_EQUAL, E}, // 15
+    {3, E, MORE, E}, // 16
+    {3, E, MORE_EQUAL, E}, // 17
+    {3, R_BRACKET, E, L_BRACKET}, // 18
+    {3, E, MOD, E}, // 19
+    {2, E, SHARP}, // 20
+};
+
+// Deklarace globalnich funkci
+// ===========================
+
+int parse(Tstable *gTable, Tstable *lTable, pInstrList iList);
+void DisposeToken();
+
+#endif

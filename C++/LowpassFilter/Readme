@@ -1,0 +1,32 @@
+################################################################################
+#
+# Project: IMS - analog lowpass filter
+# File: Readme
+# Date: 9.12.2012
+# Authors: 
+#   Martin Janys (xjanys00)
+#   Jan Bednarik (xbedna45)
+#
+################################################################################
+
+Funkce programu lowpass
+================================================================================
+Program nejprve generuje frekvencni charakteristiku Butterworthova filtru 
+5. radu ve funkci dolni propusti.
+
+Frekvencni rozsah: 1 Hz - 20 kHz
+Krok: 1 Hz
+
+Simulace je casove narocna, na skolnim serveru merlin.fit.vutbr.cz trva 
+priblizne 20 minut.
+
+Program nasledne filtruje realny vstupni signal wav/drums.wav a vystup ulozi 
+jako wav/drums-out.wav.
+
+Preklad
+================================================================================
+Program lze prelozit na unixovych operacnich systemech prikazem make.
+
+Spusteni
+================================================================================
+Program lwpass je spustitelny prikazem make run.

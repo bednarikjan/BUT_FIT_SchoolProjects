@@ -1,0 +1,99 @@
+#! /bin/ksh
+
+#####################################################################
+## Popis
+# Skript hltrace zvyraznuje syntaxi vystupniho textu programu 
+# strace. Vystupem je html zdrojovy kod se znackami zajistujicimi 
+# patricna zvyrazneni. Pouziti viz hltrace -h.
+
+#####################################################################
+# PROJEKT: IOS - uloha B.
+# DATUM: 18.3.2011
+# AUTOR: Jan Bednařík (xbedna45), xbedna45@stud.fit.vutbr.cz 
+# FAKULTA: FIT VUT Brno
+
+#####################################################################
+
+# Nastaveni lokalizace
+export LC_ALL=C
+
+# Nastaveni promenne pro volitelne zvyrazneni daneho syst. volani.
+optsys="\?";
+
+# Zpracovani parametru
+getopts ":hs:" opt;
+case "$opt" in
+  h)
+    printf "\nProgram hltrace zvyrazni syntax stopy od strace.
+Pouziti:
+hltrace [volby] <stopa.strace >stopa.html
+
+Volby:
+-s SYSCALL  Specialne zvyrazni volani SYSCALL.\n\n"
+    exit 1
+    ;;
+  s)
+    optsys=$OPTARG
+    ;;
+  \?)
+    if [ "$1" != "" ]; then
+      echo "Byl zadan neznamy parametr. Pro napovedu spustte program s\
+parametrem -h."
+      exit 1
+    fi
+    ;;
+  :)
+    echo "Parametr -$OPTARG ocekava argument."
+    exit 1
+    ;;
+  *)
+    echo "K teto situaci by nemelo nikdy dojit."
+    ;;
+esac
+
+# Tisk uvodnich html znacek.
+printf "<html>
+<style>
+.pid { color:darkred; }
+.ts { color:navy; }
+.number { color:red; }
+.const { color:green; }
+.string { color:blue; }
+.hlcall { text-decoration:none; font-weight:bold; color:black; }
+.call { text-decoration:none; color:olive; }
+
+</style>
+<body><pre>\n"
+
+
+#Nahrazeni vsech znaku '&' vyrazem &amp;
+sed -r 's/(\&)/\1amp;/g' |
+#Nahrazeni vsech znaku '<' vyrazem &lt;
+sed -r 's/</\&lt;/g' |
+#Nahrazeni vsech znaku '>' vyrazem &gt;
+sed -r 's/>/\&gt;/g' |
+#Nahrazeni vsech retezcovych literalu.
+sed -r 's/(\"[^"]*\")/<span class=\"string\">\1<\/span>/g' |
+#Nahrazeni vsech systemovych volani.
+sed -r 's/([[:lower:]][^ (]+)\(/<a href=\"http:\/\/www\.kernel\.org\/doc\/man-pages\/online\/pages\/man2\/\1\.2\.html\" class=\"call\">\1<\/a>\(/' |
+#Nahrazeni vsech pripadnych cisel procesu(na zacatku radku).
+sed -r 's/(^[[:digit:]][[:digit:]]+)/<span class=\"pid\">\1<\/span>/' |
+#Nahrazeni vsech pripadnych relativnich cas. udaju.
+sed -r 's/( +)([[:digit:]]+\.[[:digit:]]+)/\1<span class=\"ts\">\2<\/span>/' |
+#Nahrazeni hexa i dekadickych cisel na koncich radku (navratove hodnoty systemovych volani bez chyb).
+sed -r 's/([-+]?0?x?[[:xdigit:]]+)$/<span class=\"number\">\1<\/span>/' |
+#Nahrazeni hexa i dekadickych cisel na koncich radku (navratove hodnoty systemovych volani s chybami).
+sed -r 's/([-+]?0?x?[[:xdigit:]]+)( E[[:upper:]]+ \([^)]+\))$/<span class=\"number\">\1<\/span>\2/' |
+#Nahrazeni hexa i dekadickych cisel jako parametru systemovych volani.
+sed -r 's/([(,] ?)([+-]?0?x?[[:xdigit:]]+)([,)])/\1<span class=\"number\">\2<\/span>\3/g' |
+#Nahrazeni hexa i dekadickych cisel jako parametru systemovych volani.
+sed -r 's/([(,] ?)([+-]?0?x?[[:xdigit:]]+)([,)])/\1<span class=\"number\">\2<\/span>\3/g' |
+#Nahrazeni vsech pojmenovanych konstant.
+sed -r 's/([ =|[(])([[:upper:]][[:upper:][:digit:]_]+)([] |),])/\1<span class=\"const\">\2<\/span>\3/g' |
+#Nahrazeni vsech pojmenovanych konstant.
+sed -r 's/([ =|[(])([[:upper:]][[:upper:][:digit:]_]+)([] |),])/\1<span class=\"const\">\2<\/span>\3/g' |
+#Nahrazeni uzivatelem zvolenych systemovych volani
+sed -r "s/(call\">$optsys)/hl\1/"
+
+# Tisk zaverecnych html znacek.
+printf "\n</pre></body></html>"

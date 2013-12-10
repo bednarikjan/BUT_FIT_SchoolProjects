@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+
+<scene>
+    <places>
+        <place id="1" x="1072" y="1228">1,5,6,2,7,</place>
+        <place id="2" x="1189" y="1262">1,5,3,7,6,7,8,</place>
+        <place id="8" x="1307" y="1249">1,2,3,7,9,</place>
+        <place id="12" x="1105" y="1600">1,</place>
+        <place id="13" x="1221" y="1588">2,1,</place>
+        <place id="14" x="1368" y="1597">2,</place>
+        <place id="17" x="1143" y="1425">11,10,9,</place>
+        <place id="18" x="1003" y="1707"></place>
+        <place id="24" x="1302" y="1440">8,</place>
+    </places>
+    <transitions>
+        <transition id="3" x="1042" y="1350">
+            <guard>B!=5 &amp;&amp; A&gt;1</guard>
+            <action>Z=A+B-1 </action>
+            <doable>0</doable>
+        </transition>
+        <transition id="7" x="1092" y="1498">
+            <guard>D&lt;15</guard>
+            <action>K=D </action>
+            <doable>0</doable>
+        </transition>
+        <transition id="11" x="1438" y="1522">
+            <guard>T ==3</guard>
+            <action>S=2 </action>
+            <doable>0</doable>
+        </transition>
+        <transition id="20" x="1036" y="1640">
+            <guard> P&gt;1</guard>
+            <action></action>
+            <doable>0</doable>
+        </transition>
+        <transition id="21" x="1299" y="1641">
+            <guard>R&gt;=8</guard>
+            <action></action>
+            <doable>0</doable>
+        </transition>
+        <transition id="22" x="1313" y="1362">
+            <guard>Z&gt;1 &amp;&amp; P &lt;9</guard>
+            <action>C=6 </action>
+            <doable>0</doable>
+        </transition>
+        <transition id="25" x="1167" y="1704">
+            <guard>A==B</guard>
+            <action></action>
+            <doable>0</doable>
+        </transition>
+    </transitions>
+    <arcs>
+        <arc idFrom="1" idTo="3">B</arc>
+        <arc idFrom="2" idTo="3">A</arc>
+        <arc idFrom="3" idTo="17">Z</arc>
+        <arc idFrom="17" idTo="7">D</arc>
+        <arc idFrom="7" idTo="12">K</arc>
+        <arc idFrom="7" idTo="13">E</arc>
+        <arc idFrom="11" idTo="14">S</arc>
+        <arc idFrom="12" idTo="20">P</arc>
+        <arc idFrom="20" idTo="18">1</arc>
+        <arc idFrom="14" idTo="21">x</arc>
+        <arc idFrom="13" idTo="21">R</arc>
+        <arc idFrom="2" idTo="22">Z</arc>
+        <arc idFrom="22" idTo="17">G</arc>
+        <arc idFrom="22" idTo="24">C</arc>
+        <arc idFrom="24" idTo="7">new</arc>
+        <arc idFrom="24" idTo="11">T</arc>
+        <arc idFrom="24" idTo="21">Y</arc>
+        <arc idFrom="8" idTo="22">P</arc>
+        <arc idFrom="12" idTo="25">B</arc>
+        <arc idFrom="13" idTo="25">A</arc>
+    </arcs>
+</scene>

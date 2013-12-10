@@ -1,0 +1,56 @@
+﻿##############################
+Soubor: Readme
+Autor: Jan Bednarik (xbedna45)
+Datum: 18.11.2012
+##############################
+
+My Path MTU Discovery
+
+
+1) POPIS
+==============================================
+Program mypmtud slouží k získání MTU na cestě mezi zdrojem a cílem zadaným při spuštění programu.
+
+2) OMEZENÍ
+==============================================
+- Lze přeložit a spustit na operačních systémech rodiny Linux (testován byl na referenčním stroji běžícím na 32bitovém OS Ubuntu 12.04).
+- Vyžaduje práva uživatele root
+
+3) PŘÍKLAD SPUŠTĚNÍ
+==============================================
+./mypmtud -m 2000 www.fit.vutbr.cz
+
+4) SEZNAM ODEVZDANÝCH SOUBORŮ
+==============================================
++-./
+  |
+  +-Makefile
+  |
+  +-manual.pdf
+  |
+  +-Readme
+  |
+  +-src/
+    |
+    +-constants.h
+    |
+    +-error.cpp
+    |
+    +-error.h
+    |
+    +-main.cpp
+    |
+    +-Makefile
+    |
+    +-params.cpp
+    |
+    +-params.h
+    |
+    +-socket.cpp
+    |
+    +-socket.h
+    |
+    +-targethost.cpp
+    |
+    +-targethost.h
+
