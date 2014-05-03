@@ -1,5 +1,5 @@
-BUT_FIT_SchoolProjects
-======================
+BUT_FIT_SchoolProjects-Bachelor
+===============================
 
 Projects and assignments from the courses I assigned for during bachelor's degree studies at Brno University of Technology, Faculty of Information Technology.
 
